@@ -29,4 +29,9 @@ introduce()
 # print project info
 print("\nProject details:")
 for key, value in project_info.items():
+<<<<<<< HEAD
     print(f"  {key}: {value}")
+=======
+    print(f"  {key}: {value}")
+
+>>>>>>> 3848b2893d601ff172a513a705d8909fc79c9ead
