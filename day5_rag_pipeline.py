@@ -44,3 +44,51 @@ def process_pdf(file_path):
     print(f"✅ Created {len(chunks)} chunks")
     
     return chunks
+
+# ============================================
+# STEP 2: CREATE EMBEDDINGS AND STORE IN FAISS
+# ============================================
+
+def create_vector_store(chunks):
+    """
+    Converts chunks to embeddings
+    Stores in FAISS
+    We built this on Day 4 — same code!
+    """
+    # create embeddings
+    print("\nCreating embeddings...")
+    embeddings = model.encode(chunks)
+    print(f"✅ Created embeddings: {embeddings.shape}")
+    
+    # store in FAISS
+    print("Storing in FAISS...")
+    dimension = embeddings.shape[1]
+    index = faiss.IndexFlatL2(dimension)
+    index.add(embeddings)
+    print(f"✅ Stored {index.ntotal} chunks in FAISS")
+    
+    return index
+
+# ============================================
+# STEP 3: SEARCH FAISS
+# ============================================
+
+def search_relevant_chunks(index, chunks, question, top_k=3):
+    """
+    Converts question to embedding
+    Searches FAISS for most similar chunks
+    Returns top 3 relevant chunks
+    """
+    # convert question to embedding
+    question_embedding = model.encode([question])
+    
+    # search FAISS
+    D, I = index.search(question_embedding, top_k)
+    
+    # get actual text chunks
+    relevant_chunks = []
+    for i in I[0]:
+        if i < len(chunks):
+            relevant_chunks.append(chunks[i])
+    
+    return relevant_chunks
