@@ -92,3 +92,92 @@ def search_relevant_chunks(index, chunks, question, top_k=3):
             relevant_chunks.append(chunks[i])
     
     return relevant_chunks
+
+# ============================================
+# STEP 4: ASK AI
+# ============================================
+
+def ask_ai(relevant_chunks, question):
+    """
+    Takes relevant chunks from FAISS
+    Sends to Qwen with the question
+    Returns answer
+    """
+    # join chunks into one context
+    context = "\n\n".join(relevant_chunks)
+    
+    # build prompt
+    prompt = f"""You are a helpful assistant.
+Answer the question based ONLY on the context below.
+If answer is not in context say 
+'I could not find this in the document.'
+
+Context:
+{context}
+
+Question: {question}
+
+Answer:"""
+
+    # send to local Qwen model
+    response = ollama.chat(
+        model="qwen2.5:3b",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    )
+    
+    return response['message']['content']
+
+# ============================================
+# STEP 5: MAIN — CONNECT EVERYTHING
+# ============================================
+
+def main():
+    print("🤖 PDF Question Answering System")
+    print("=" * 50)
+    
+    # step 1: process the PDF
+    chunks = process_pdf("test.pdf")
+    
+    # step 2: create embeddings and store in FAISS
+    index = create_vector_store(chunks)
+    
+    # step 3: question loop
+    # user can keep asking questions until they type 'exit'
+    print("\n✅ System ready! Ask questions about your PDF.")
+    print("Type 'exit' to quit.\n")
+    
+    while True:
+        # get question from user
+        question = input("❓ Your question: ")
+        
+        # exit condition
+        if question.lower() == 'exit':
+            print("👋 Goodbye!")
+            break
+        
+        # skip empty questions
+        if question.strip() == "":
+            continue
+        
+        print("🔍 Searching PDF...")
+        
+        # search FAISS for relevant chunks
+        relevant_chunks = search_relevant_chunks(
+            index, chunks, question
+        )
+        
+        print("🤖 Asking AI...")
+        
+        # ask AI with those chunks
+        answer = ask_ai(relevant_chunks, question)
+        
+        print(f"\n💬 Answer: {answer}")
+        print("-" * 50 + "\n")
+
+if __name__ == "__main__":
+    main()
